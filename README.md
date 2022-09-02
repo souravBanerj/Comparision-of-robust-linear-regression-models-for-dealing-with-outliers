@@ -27,4 +27,19 @@ We start with the good old linear regression model, which is likely highly influ
 d.<b>Huber regression</b>
 Huber regression is an example of a robust regression algorithm that assigns less weight to observations identified as outliers. To do so, it uses the Huber loss in the optimization routine.
 
-e.
+e.You might recognize this approach to loss functions from analyzing the differences between two of the popular regression evaluation metrics: mean squared error (MSE) and mean absolute error (MAE). Similar to what the Huber loss implies, it is recommended to use MAE when you are dealing with outliers, as it does not penalize those observations as heavily as the squared loss does.
+Connected to the previous point is the fact that optimizing the squared loss results in an unbiased estimator around the mean, while the absolute difference leads to an unbiased estimator around the median. The median is much more robust to outliers than the mean, so we expect this to provide a less biased estimate.
+
+f.<b>RANSAC regression</b>
+Random sample consensus (RANSAC) regression is a non-deterministic algorithm that tries to separate the training data into inliers (which may be subject to noise) and outliers. 
+
+g.<b>Theil-Sen regression</b>
+The last of the robust regression algorithms available in scikit-learn is the Theil-Sen regression. It is a non-parametric regression method, which means that it makes no assumption about the underlying data distribution. In short, it involves fitting multiple regression models on subsets of the training data and then aggregating the coefficients at the last step.
+
+<b>In General</b>
+In general, robust fitting in a high-dimensional setting is difficult.
+In contrast to Theil-Sen and RANSAC, Huber regression is not trying to completely filter out the outliers. Instead, it lessens their effect on the fit.
+Huber regression should be faster than RANSAC and Theil-Sen, as the latter ones fit on smaller subsets of the data.
+Theil-Sen and RANSAC are unlikely to be as robust as the Huber regression using the default hyperparameters.
+RANSAC is faster than Theil-Sen and it scales better with the number of samples.
+RANSAC should deal better with large outliers in the y-direction, which is the most common scenario.
