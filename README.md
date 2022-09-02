@@ -43,3 +43,9 @@ Huber regression should be faster than RANSAC and Theil-Sen, as the latter ones 
 Theil-Sen and RANSAC are unlikely to be as robust as the Huber regression using the default hyperparameters.
 RANSAC is faster than Theil-Sen and it scales better with the number of samples.
 RANSAC should deal better with large outliers in the y-direction, which is the most common scenario.
+
+
+
+<b>Reference</b></br>
+https://www.hrpub.org/download/20200229/MSA6-13491065.pdf
+
