@@ -16,10 +16,15 @@ Naturally, this leads to the linear regression finding a worse and more biased f
 5.There are many possible approaches to dealing with outliers: removing them from the observations, treating them (for example, capping the extreme observations at a 
 reasonable value), or using algorithms that are well-suited for dealing with such values on their own. This post focuses on these robust methods.
 
-<b>Steps</b>
+<b>Steps</b><br>
 a. We start with creating a dataset of 500 observations, with one informative feature. With only one feature and the target, we plot the data, together with the models’ fits. Also, we specify the noise (standard deviation applied to the output) and create a list containing the coefficient of the underlying linear model, that is, what the coefficient would be if the linear regression model was fit to the generated data. In this example, the value of the coefficient is 64.6. We extract those coefficients for all the models and then use them to compare how well they fit the data.
 
 b. Next, we replace the first 25 observations (5% of the observations) with outliers, far outside of the mass of generated observations. Bear in mind that the coefficient stored earlier comes from the data without outliers. Including them makes a difference.
 
-c.#Linear regression
+c.<b>Linear regression</b>
 We start with the good old linear regression model, which is likely highly influenced by the presence of the outliers.Then, we prepare an object to use for plotting the fits of the models. The plotline_X object is a 2D array containing evenly spaced values within the interval dictated by the generated data set. We use this object for getting the fitted values for the models. It must be a 2D array, given it is the expected input of the models in scikit-learn.
+
+d.<b>Huber regression</b>
+Huber regression is an example of a robust regression algorithm that assigns less weight to observations identified as outliers. To do so, it uses the Huber loss in the optimization routine.
+
+e.
