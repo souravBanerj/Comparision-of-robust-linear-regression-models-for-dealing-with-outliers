@@ -1,0 +1,135 @@
+#Three robust linear regression models for dealing with outliers Setup
+#Import all the important libraries for generating,plotting And applying the algorithms using these libraryt
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn import datasets
+from sklearn.linear_model import (LinearRegression, HuberRegressor, 
+                                  RANSACRegressor, TheilSenRegressor)
+
+# settings for plot
+sns.set_theme(context="talk", style="darkgrid", 
+              palette="tab10", color_codes=True, 
+              rc={"figure.figsize": [12, 8]})
+%config InlineBackend.figure_format = "retina"
+
+N_SAMPLES = 500
+N_OUTLIERS = 25
+
+X, y, coef = datasets.make_regression(
+    n_samples=N_SAMPLES, 
+    n_features=1, 
+    n_informative=1, 
+    noise=20, 
+    coef=True, 
+    random_state=42
+)
+# adding coef in the list
+coef_list = [["original_coef", float(coef)]]
+
+# add outliers               
+np.random.seed(42)
+X[:N_OUTLIERS] = 10 + 0.75 * np.random.normal(size=(N_OUTLIERS, 1))
+y[:N_OUTLIERS] = -15 + 20 * np.random.normal(size=N_OUTLIERS)
+
+plt.scatter(X, y,c="blue")
+
+plt.xlabel("X Indipendent Variable")
+plt.ylabel("Y Dependent Variable")
+plt.title("One Feature Linear Regression Model")
+Text(0.5, 1.0, 'One Feature Linear Regression Model')
+
+#sanity check - see what the coefficient would be when fitted to data without outliers
+lr = LinearRegression().fit(X[N_OUTLIERS:], y[N_OUTLIERS:])
+lr.coef_[0]
+#63.357243095179605
+Linear regression
+#We start with the good old linear regression model, which is likely highly influenced by the presence of the outliers.
+lr = LinearRegression().fit(X, y)
+coef_list.append(["linear_regression", lr.coef_[0]])
+plotline_X = np.arange(X.min(), X.max()).reshape(-1, 1)
+
+fit_df = pd.DataFrame(
+    index = plotline_X.flatten(),
+    data={"linear_regression": lr.predict(plotline_X)}
+)
+
+
+#plt.subplots() is a function that returns a tuple containing a figure and axes object(s). Thus when using fig, ax = plt.subplots()
+#you unpack this tuple into the variables fig and ax. Having fig is useful if you want 
+#to change figure-level attributes or save the figure as an image file later (e.g. with fig.savefig('yourfilename.png')).
+fix, ax = plt.subplots()
+fit_df.plot(ax=ax,c="red")
+plt.scatter(X, y, c="Blue")
+plt.title("Linear regression on data with outliers");
+
+#Huber Regression
+#Huber regression is an example of a robust regression algorithm that assigns 
+#less weight to observations identified as outliers. To do so, it uses the Huber loss in the optimization routine.
+#Having said that, Huber loss is basically a combination of the squared and absolute loss functions.
+#Similar to what the Huber loss implies, it is recommended to use MAE when you are dealing with 
+#outliers, as it does not penalize those observations as heavily as the squared loss does.
+huber = HuberRegressor().fit(X, y)
+fit_df["huber_regression"] = huber.predict(plotline_X)
+coef_list.append(["huber_regression", huber.coef_[0]])
+fix, ax = plt.subplots()
+fit_df["huber_regression"].plot(ax=ax,c="orange")
+plt.scatter(X, y, c="blue")
+plt.title("Huber regression on data with outliers");
+
+#RANSAC Regression
+#Random sample consensus (RANSAC) regression is a non-deterministic algorithm that tries to separate the training data into
+#inliers (which may be subject to noise) and outliers. Then, it estimates the final model only using the inliers.
+ransac = RANSACRegressor(random_state=42).fit(X, y)
+fit_df["ransac_regression"] = ransac.predict(plotline_X)
+ransac_coef = ransac.estimator_.coef_
+coef_list.append(["ransac_regression", ransac.estimator_.coef_[0]])
+fix, ax = plt.subplots()
+fit_df["ransac_regression"].plot(ax=ax,c="k")
+plt.scatter(X, y, c="blue")
+plt.title("RANSAC regression on data with outliers");
+#Roughly 10% of data was identified as outliers and all the observations introduced were correctly classified as outliers. Them, we can quickly visualize 
+#the inliers compared to outliers to see the remaining 26 observations flagged as outliers.
+
+inlier_mask = ransac.inlier_mask_
+outlier_mask = ~inlier_mask
+print(f"Total outliers: {sum(outlier_mask)}")
+print(f"Outliers we have added ourselves: {sum(outlier_mask[:N_OUTLIERS])} / {N_OUTLIERS}")
+Total outliers: 51
+Outliers we have added ourselves: 25 / 25
+plt.scatter(X[inlier_mask], y[inlier_mask], color="blue", label="Inliers")
+plt.scatter(X[outlier_mask], y[outlier_mask], color="red", label="Outliers")
+plt.title("RANSAC - outliers vs inliers");
+#that the observations located farthest from the hypothetical best-fit line of the original data are considered outliers.
+
+#The last of the robust regression algorithms available in scikit-learn is the Theil-Sen regression. It is a non-parametric regression method, which means that it makes no assumption about the underlying data distribution. In short, it involves 
+#fitting multiple regression models on subsets of the training data and then aggregating the coefficients at the last step.
+
+theilsen = TheilSenRegressor(random_state=42).fit(X, y)
+fit_df["theilsen_regression"] = theilsen.predict(plotline_X)
+coef_list.append(["theilsen_regression", theilsen.coef_[0]])
+fix, ax = plt.subplots()
+fit_df["theilsen_regression"].plot(ax=ax,c="green")
+plt.scatter(X, y, c="blue")
+plt.title("Theil-Sen regression on data with outliers");
+
+#Comparison of the models
+pd.DataFrame(coef_list, columns=["model", "coef"]).round(2)
+#To be more precise, we look at the estimated coefficients. 
+#The following table shows that the RANSAC regression results in the fit closest to the one of the original data. 
+#It is also interesting to see how big of an impact the 5% of outliers had on the regular linear regression’s fit.
+
+fix, ax = plt.subplots()
+fit_df.plot(ax=ax)
+plt.scatter(X, y, c="k")
+plt.title("Comparison of robust regression algorithms");
+
+#Clearly, the RANSAC and Theil-Sen regressions have resulted in the most accurate best fit lines.
+#In contrast to Theil-Sen and RANSAC, Huber regression is not trying to completely filter out the outliers. Instead, it lessens their effect on the fit.
+#Huber regression should be faster than RANSAC and Theil-Sen, as the latter ones fit on smaller subsets of the data.
+#Theil-Sen and RANSAC are unlikely to be as robust as the Huber regression using the default hyperparameters.
+#RANSAC is faster than Theil-Sen and it scales better with the number of samples.
+#RANSAC should deal better with large outliers in the y-direction, which is the most common scenario.
+ 
